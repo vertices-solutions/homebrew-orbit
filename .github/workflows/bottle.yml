@@ -15,17 +15,29 @@ jobs:
 
       - uses: Homebrew/actions/setup-homebrew@master
 
+      - name: Compute tap + formula name
+        run: |
+          repo="${GITHUB_REPOSITORY#*/}"
+          tap_repo="${repo#homebrew-}"
+          tap="${GITHUB_REPOSITORY_OWNER}/${tap_repo}"
+          echo "TAP=${tap}" >> "$GITHUB_ENV"
+          echo "FORMULA=${tap}/hpc" >> "$GITHUB_ENV"
+
+      - name: Tap this repository
+        run: |
+          brew tap "${TAP}" "${GITHUB_WORKSPACE}"
+
       - name: Compute version + root_url
         id: meta
         run: |
-          version="$(brew info --json=v2 ./Formula/hpc.rb | python3 -c 'import json, sys; data=json.load(sys.stdin); print(data["formulae"][0]["versions"]["stable"])')"
+          version="$(brew info --json=v2 "${FORMULA}" | python3 -c 'import json, sys; data=json.load(sys.stdin); print(data["formulae"][0]["versions"]["stable"])')"
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "root_url=https://github.com/${GITHUB_REPOSITORY}/releases/download/hpc-${version}" >> "$GITHUB_OUTPUT"
 
       - name: Build bottle
         run: |
-          brew install --build-bottle ./Formula/hpc.rb
-          brew bottle --no-rebuild --json --root-url "${{ steps.meta.outputs.root_url }}" ./Formula/hpc.rb
+          brew install --build-bottle "${FORMULA}"
+          brew bottle --no-rebuild --json --root-url "${{ steps.meta.outputs.root_url }}" "${FORMULA}"
           mkdir -p dist
           mv *.bottle*.tar.gz dist/
           mv *.json dist/
@@ -45,6 +57,18 @@ jobs:
 
       - uses: Homebrew/actions/setup-homebrew@master
 
+      - name: Compute tap + formula name
+        run: |
+          repo="${GITHUB_REPOSITORY#*/}"
+          tap_repo="${repo#homebrew-}"
+          tap="${GITHUB_REPOSITORY_OWNER}/${tap_repo}"
+          echo "TAP=${tap}" >> "$GITHUB_ENV"
+          echo "FORMULA=${tap}/hpc" >> "$GITHUB_ENV"
+
+      - name: Tap this repository
+        run: |
+          brew tap "${TAP}" "${GITHUB_WORKSPACE}"
+
       - uses: actions/download-artifact@v4
         with:
           pattern: bottles-*
@@ -54,13 +78,15 @@ jobs:
       - name: Compute version + root_url
         id: meta
         run: |
-          version="$(brew info --json=v2 ./Formula/hpc.rb | python3 -c 'import json, sys; data=json.load(sys.stdin); print(data["formulae"][0]["versions"]["stable"])')"
+          version="$(brew info --json=v2 "${FORMULA}" | python3 -c 'import json, sys; data=json.load(sys.stdin); print(data["formulae"][0]["versions"]["stable"])')"
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "root_url=https://github.com/${GITHUB_REPOSITORY}/releases/download/hpc-${version}" >> "$GITHUB_OUTPUT"
 
       - name: Merge bottle metadata into formula
         run: |
           brew bottle --merge --write --root-url "${{ steps.meta.outputs.root_url }}" dist/*.json
+          tap_path="$(brew --repo "${TAP}")"
+          cp "${tap_path}/Formula/hpc.rb" Formula/hpc.rb
 
       - name: Configure git identity
         run: |
