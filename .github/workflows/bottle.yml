@@ -12,6 +12,8 @@ jobs:
         os: [macos-14, macos-15, ubuntu-22.04]
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Homebrew (macOS)
         if: runner.os == 'macOS'
@@ -71,6 +73,8 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Install Homebrew (Linux)
         run: |
@@ -109,6 +113,13 @@ jobs:
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "root_url=https://github.com/${GITHUB_REPOSITORY}/releases/download/hpc-${version}" >> "$GITHUB_OUTPUT"
 
+      - name: Configure git identity (for brew)
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          echo "HOMEBREW_GIT_NAME=github-actions[bot]" >> "$GITHUB_ENV"
+          echo "HOMEBREW_GIT_EMAIL=github-actions[bot]@users.noreply.github.com" >> "$GITHUB_ENV"
+
       - name: Merge bottle metadata into formula
         run: |
           brew bottle --merge --write --root-url "${{ steps.meta.outputs.root_url }}" dist/*.json
@@ -123,16 +134,17 @@ jobs:
               shutil.copyfile(src, dst)
           PY
 
-      - name: Configure git identity
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
       - name: Commit formula updates
         run: |
-          if ! git diff --quiet; then
-            git add Formula/hpc.rb
+          git add Formula/hpc.rb
+          if ! git diff --cached --quiet; then
             git commit -m "Add bottle for hpc ${{ steps.meta.outputs.version }}"
+          fi
+          if [ -n "$(git rev-parse --abbrev-ref --symbolic-full-name @{u} 2>/dev/null)" ]; then
+            if [ -n "$(git log --oneline @{u}.. 2>/dev/null)" ]; then
+              git push
+            fi
+          else
             git push
           fi
 
