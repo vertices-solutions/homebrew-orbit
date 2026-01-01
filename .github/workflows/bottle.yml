@@ -13,7 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: Homebrew/actions/setup-homebrew@v2
+      - uses: Homebrew/actions/setup-homebrew@v3
 
       - name: Compute version + root_url
         id: meta
@@ -43,7 +43,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: Homebrew/actions/setup-homebrew@v2
+      - uses: Homebrew/actions/setup-homebrew@v3
 
       - uses: actions/download-artifact@v4
         with:
@@ -61,6 +61,11 @@ jobs:
       - name: Merge bottle metadata into formula
         run: |
           brew bottle --merge --write --root-url "${{ steps.meta.outputs.root_url }}" dist/*.json
+
+      - name: Configure git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Commit formula updates
         run: |
