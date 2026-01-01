@@ -13,7 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: Homebrew/actions/setup-homebrew@v3
+      - uses: Homebrew/actions/setup-homebrew@master
 
       - name: Compute version + root_url
         id: meta
@@ -43,7 +43,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: Homebrew/actions/setup-homebrew@v3
+      - uses: Homebrew/actions/setup-homebrew@master
 
       - uses: actions/download-artifact@v4
         with:
