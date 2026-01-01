@@ -18,12 +18,7 @@ jobs:
       - name: Compute version + root_url
         id: meta
         run: |
-          version="$(brew info --json=v2 ./Formula/hpc.rb | python3 - <<'PY'
-import json, sys
-data = json.load(sys.stdin)
-print(data["formulae"][0]["versions"]["stable"])
-PY
-)"
+          version="$(brew info --json=v2 ./Formula/hpc.rb | python3 -c 'import json, sys; data=json.load(sys.stdin); print(data["formulae"][0]["versions"]["stable"])')"
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "root_url=https://github.com/${GITHUB_REPOSITORY}/releases/download/hpc-${version}" >> "$GITHUB_OUTPUT"
 
@@ -59,12 +54,7 @@ PY
       - name: Compute version + root_url
         id: meta
         run: |
-          version="$(brew info --json=v2 ./Formula/hpc.rb | python3 - <<'PY'
-import json, sys
-data = json.load(sys.stdin)
-print(data["formulae"][0]["versions"]["stable"])
-PY
-)"
+          version="$(brew info --json=v2 ./Formula/hpc.rb | python3 -c 'import json, sys; data=json.load(sys.stdin); print(data["formulae"][0]["versions"]["stable"])')"
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "root_url=https://github.com/${GITHUB_REPOSITORY}/releases/download/hpc-${version}" >> "$GITHUB_OUTPUT"
 
