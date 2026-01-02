@@ -5,7 +5,6 @@ on:
 
 env:
   HOMEBREW_NO_AUTO_UPDATE: "1"
-  HOMEBREW_NO_INSTALL_FROM_API: "1"  # ensure Homebrew uses tap formula, not API metadata
 
 jobs:
   bottle:
@@ -81,8 +80,13 @@ jobs:
           PY
 
           mkdir -p dist
-          mv *.bottle*.tar.gz dist/ || true
-          mv *.bottle.json dist/ || true
+          mv *.bottle*.tar.gz dist/
+          mv *.bottle.json dist/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bottles-${{ matrix.os }}
+          path: dist/*
   publish:
     runs-on: ubuntu-22.04
     needs: bottle
@@ -140,34 +144,40 @@ jobs:
       - name: Merge bottle metadata into formula (and copy back)
         run: |
           # Merge ALL JSONs into the tapped formula and write bottle stanza
-          brew bottle --merge --write --root-url "${{ steps.meta.outputs.root_url }}" dist/*.json
+          mapfile -d '' json_files < <(find dist -type f -name '*.json' -print0)
+          if [ "${#json_files[@]}" -eq 0 ]; then
+            echo "No bottle JSON files found under ./dist"
+            find dist -maxdepth 4 -type f -print
+            exit 1
+          fi
+          brew bottle --merge --write --root-url "${{ steps.meta.outputs.root_url }}" "${json_files[@]}"
 
           # Copy the formula from the tap checkout back into this repo workspace
           tap_path="$(brew --repo "${TAP}")"
           src="${tap_path}/Formula/hpc.rb"
           dst="${GITHUB_WORKSPACE}/Formula/hpc.rb"
-          python3 - <<'PY'
+          SRC="${src}" DST="${dst}" python3 - <<'PY'
           import os, shutil
-          src = os.environ["src"]
-          dst = os.environ["dst"]
+          src = os.environ["SRC"]
+          dst = os.environ["DST"]
           # Make sure the destination dir exists
           os.makedirs(os.path.dirname(dst), exist_ok=True)
-          shutil.copyfile(src, dst)
+          if os.path.realpath(src) != os.path.realpath(dst):
+              shutil.copyfile(src, dst)
           PY
 
           # Hard fail if bottle stanza wasn't written
           grep -n "^[[:space:]]*bottle do" "${GITHUB_WORKSPACE}/Formula/hpc.rb"
-
-        env:
-          src: ${{ github.workspace }} # placeholder; overridden inside step via shell
-          dst: ${{ github.workspace }} # placeholder; overridden inside step via shell
 
       - name: Commit formula updates (bottle stanza)
         run: |
           git add Formula/hpc.rb
           if ! git diff --cached --quiet; then
             git commit -m "Add bottle for hpc ${{ steps.meta.outputs.version }}"
-            git push
+          fi
+          if [[ "${GITHUB_REF}" == refs/heads/* ]]; then
+            branch="${GITHUB_REF#refs/heads/}"
+            git push origin "HEAD:${branch}"
           fi
 
       - name: Create release + upload bottles
@@ -175,4 +185,4 @@ jobs:
         with:
           tag_name: hpc-${{ steps.meta.outputs.version }}
           name: "hpc ${{ steps.meta.outputs.version }} bottles"
-          files: dist/*.bottle*.tar.gz
+          files: dist/**/*.bottle*.tar.gz
