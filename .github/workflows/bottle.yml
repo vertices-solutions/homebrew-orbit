@@ -22,7 +22,12 @@ jobs:
       - name: Set up Homebrew (macOS)
         if: runner.os == 'macOS'
         run: |
-          echo "/opt/homebrew/bin" >> "$GITHUB_PATH"
+          if [ -x /opt/homebrew/bin/brew ]; then
+            echo "/opt/homebrew/bin" >> "$GITHUB_PATH"
+          fi
+          if [ -x /usr/local/bin/brew ]; then
+            echo "/usr/local/bin" >> "$GITHUB_PATH"
+          fi
 
       - name: Install Homebrew (Linux)
         if: runner.os == 'Linux'
@@ -38,15 +43,32 @@ jobs:
           repo="${GITHUB_REPOSITORY#*/}"
           tap_repo="${repo#homebrew-}"
           tap="${GITHUB_REPOSITORY_OWNER}/${tap_repo}"
+          echo "TAP_REPO=${tap_repo}" >> "$GITHUB_ENV"
           echo "TAP=${tap}" >> "$GITHUB_ENV"
           echo "FORMULA=${tap}/hpc" >> "$GITHUB_ENV"
 
       - name: Tap this repository
         run: |
-          if brew tap | grep -Fxq "${TAP}"; then
-            brew untap "${TAP}"
-          fi
+          ruby -c "${GITHUB_WORKSPACE}/Formula/hpc.rb"
+          brew_repo="$(brew --repository)"
+          tap_dir="${brew_repo}/Library/Taps/${GITHUB_REPOSITORY_OWNER}/homebrew-${TAP_REPO}"
+          brew untap --force "${TAP}" 2>/dev/null || true
+          case "${tap_dir}" in
+            "${brew_repo}"/Library/Taps/*) rm -rf "${tap_dir}" ;;
+            *) echo "Refusing to remove unexpected tap dir: ${tap_dir}" ; exit 1 ;;
+          esac
           brew tap "${TAP}" "${GITHUB_WORKSPACE}"
+          tap_path="$(brew --repo "${TAP}")"
+          src="${GITHUB_WORKSPACE}/Formula/hpc.rb"
+          dst="${tap_path}/Formula/hpc.rb"
+          SRC="${src}" DST="${dst}" python3 - <<'PY'
+          import os, shutil
+          src = os.environ["SRC"]
+          dst = os.environ["DST"]
+          if os.path.realpath(src) != os.path.realpath(dst):
+              shutil.copyfile(src, dst)
+          PY
+          ruby -c "${dst}"
 
       - name: Compute version + root_url
         id: meta
@@ -111,15 +133,32 @@ jobs:
           repo="${GITHUB_REPOSITORY#*/}"
           tap_repo="${repo#homebrew-}"
           tap="${GITHUB_REPOSITORY_OWNER}/${tap_repo}"
+          echo "TAP_REPO=${tap_repo}" >> "$GITHUB_ENV"
           echo "TAP=${tap}" >> "$GITHUB_ENV"
           echo "FORMULA=${tap}/hpc" >> "$GITHUB_ENV"
 
       - name: Tap this repository
         run: |
-          if brew tap | grep -Fxq "${TAP}"; then
-            brew untap "${TAP}"
-          fi
+          ruby -c "${GITHUB_WORKSPACE}/Formula/hpc.rb"
+          brew_repo="$(brew --repository)"
+          tap_dir="${brew_repo}/Library/Taps/${GITHUB_REPOSITORY_OWNER}/homebrew-${TAP_REPO}"
+          brew untap --force "${TAP}" 2>/dev/null || true
+          case "${tap_dir}" in
+            "${brew_repo}"/Library/Taps/*) rm -rf "${tap_dir}" ;;
+            *) echo "Refusing to remove unexpected tap dir: ${tap_dir}" ; exit 1 ;;
+          esac
           brew tap "${TAP}" "${GITHUB_WORKSPACE}"
+          tap_path="$(brew --repo "${TAP}")"
+          src="${GITHUB_WORKSPACE}/Formula/hpc.rb"
+          dst="${tap_path}/Formula/hpc.rb"
+          SRC="${src}" DST="${dst}" python3 - <<'PY'
+          import os, shutil
+          src = os.environ["SRC"]
+          dst = os.environ["DST"]
+          if os.path.realpath(src) != os.path.realpath(dst):
+              shutil.copyfile(src, dst)
+          PY
+          ruby -c "${dst}"
 
       - uses: actions/download-artifact@v4
         with:
@@ -144,7 +183,7 @@ jobs:
       - name: Merge bottle metadata into formula (and copy back)
         run: |
           # Merge ALL JSONs into the tapped formula and write bottle stanza
-          mapfile -d '' json_files < <(find dist -type f -name '*.json' -print0)
+          mapfile -d '' json_files < <(find dist -type f -name '*.bottle.json' -print0)
           if [ "${#json_files[@]}" -eq 0 ]; then
             echo "No bottle JSON files found under ./dist"
             find dist -maxdepth 4 -type f -print
