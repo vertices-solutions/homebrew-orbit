@@ -2,6 +2,11 @@ name: Build bottles
 
 on:
   workflow_dispatch:
+    inputs:
+      version:
+        description: "Version or tag (e.g., 0.2.0 or v0.2.0)"
+        required: false
+        type: string
 
 env:
   HOMEBREW_NO_AUTO_UPDATE: "1"
@@ -18,6 +23,100 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Bump formula to version input (optional)
+        if: ${{ inputs.version != '' }}
+        env:
+          VERSION_INPUT: ${{ inputs.version }}
+        run: |
+          python3 - <<'PY'
+          import hashlib
+          import os
+          import re
+          import sys
+          import urllib.request
+
+          version_input = os.environ.get("VERSION_INPUT", "").strip()
+          if not version_input:
+              sys.exit(0)
+
+          def series_of(version):
+              parts = version.split(".")
+              if len(parts) < 2:
+                  raise ValueError(f"Version '{version}' does not have major.minor")
+              return f"{parts[0]}.{parts[1]}"
+
+          def class_name(series):
+              return "HpcAT" + series.replace(".", "")
+
+          path = "Formula/hpc.rb"
+          with open(path, "r", encoding="utf-8") as fh:
+              text = fh.read()
+
+          current_match = re.search(
+              r'^\s*url\s+"[^"]*/v([0-9][0-9A-Za-z\.-]*)\.tar\.gz"',
+              text,
+              flags=re.M,
+          )
+          if not current_match:
+              raise SystemExit("Could not determine current version from Formula/hpc.rb url")
+
+          current_version = current_match.group(1)
+          current_series = series_of(current_version)
+
+          new_version = version_input.lstrip("v")
+          new_series = series_of(new_version)
+
+          if current_series != new_series:
+              versioned_path = f"Formula/hpc@{current_series}.rb"
+              if not os.path.exists(versioned_path):
+                  versioned_text = text
+                  versioned_text, count = re.subn(
+                      r'^\s*class\s+Hpc\s+<\s+Formula\s*$',
+                      f"class {class_name(current_series)} < Formula",
+                      versioned_text,
+                      flags=re.M,
+                  )
+                  if count != 1:
+                      raise SystemExit("Could not update class name for versioned formula")
+                  versioned_text, count = re.subn(
+                      r'^(\s*license\s+"[^"]+")',
+                      r'\1\n\n  keg_only :versioned_formula',
+                      versioned_text,
+                      flags=re.M,
+                      count=1,
+                  )
+                  if count != 1:
+                      raise SystemExit("Could not insert keg_only for versioned formula")
+                  with open(versioned_path, "w", encoding="utf-8") as fh:
+                      fh.write(versioned_text)
+                  print(f"Created {versioned_path}")
+              else:
+                  print(f"Versioned formula already exists: {versioned_path}")
+          else:
+              print(f"Skipping versioned formula for {current_series} (same series)")
+
+          tag = f"v{new_version}"
+          url = f"https://github.com/hpcd-dev/hpcd/archive/refs/tags/{tag}.tar.gz"
+
+          sha256 = hashlib.sha256()
+          with urllib.request.urlopen(url) as resp:
+              while True:
+                  chunk = resp.read(1024 * 1024)
+                  if not chunk:
+                      break
+                  sha256.update(chunk)
+          digest = sha256.hexdigest()
+
+          text = re.sub(r'^(\s*url\s+\")[^\"]+\"', rf'\1{url}"', text, flags=re.M)
+          text = re.sub(r'^(\s*sha256\s+\")[^\"]+\"', rf'\1{digest}"', text, flags=re.M)
+          text = re.sub(r'\n\s*bottle do\n(?:.|\n)*?\n\s*end\n', '\n', text, count=1)
+
+          with open(path, "w", encoding="utf-8") as fh:
+              fh.write(text)
+
+          print(f"Updated Formula/hpc.rb to {new_version} (sha256 {digest})")
+          PY
 
       - name: Set up Homebrew (macOS)
         if: runner.os == 'macOS'
@@ -136,6 +235,100 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Bump formula to version input (optional)
+        if: ${{ inputs.version != '' }}
+        env:
+          VERSION_INPUT: ${{ inputs.version }}
+        run: |
+          python3 - <<'PY'
+          import hashlib
+          import os
+          import re
+          import sys
+          import urllib.request
+
+          version_input = os.environ.get("VERSION_INPUT", "").strip()
+          if not version_input:
+              sys.exit(0)
+
+          def series_of(version):
+              parts = version.split(".")
+              if len(parts) < 2:
+                  raise ValueError(f"Version '{version}' does not have major.minor")
+              return f"{parts[0]}.{parts[1]}"
+
+          def class_name(series):
+              return "HpcAT" + series.replace(".", "")
+
+          path = "Formula/hpc.rb"
+          with open(path, "r", encoding="utf-8") as fh:
+              text = fh.read()
+
+          current_match = re.search(
+              r'^\s*url\s+"[^"]*/v([0-9][0-9A-Za-z\.-]*)\.tar\.gz"',
+              text,
+              flags=re.M,
+          )
+          if not current_match:
+              raise SystemExit("Could not determine current version from Formula/hpc.rb url")
+
+          current_version = current_match.group(1)
+          current_series = series_of(current_version)
+
+          new_version = version_input.lstrip("v")
+          new_series = series_of(new_version)
+
+          if current_series != new_series:
+              versioned_path = f"Formula/hpc@{current_series}.rb"
+              if not os.path.exists(versioned_path):
+                  versioned_text = text
+                  versioned_text, count = re.subn(
+                      r'^\s*class\s+Hpc\s+<\s+Formula\s*$',
+                      f"class {class_name(current_series)} < Formula",
+                      versioned_text,
+                      flags=re.M,
+                  )
+                  if count != 1:
+                      raise SystemExit("Could not update class name for versioned formula")
+                  versioned_text, count = re.subn(
+                      r'^(\s*license\s+"[^"]+")',
+                      r'\1\n\n  keg_only :versioned_formula',
+                      versioned_text,
+                      flags=re.M,
+                      count=1,
+                  )
+                  if count != 1:
+                      raise SystemExit("Could not insert keg_only for versioned formula")
+                  with open(versioned_path, "w", encoding="utf-8") as fh:
+                      fh.write(versioned_text)
+                  print(f"Created {versioned_path}")
+              else:
+                  print(f"Versioned formula already exists: {versioned_path}")
+          else:
+              print(f"Skipping versioned formula for {current_series} (same series)")
+
+          tag = f"v{new_version}"
+          url = f"https://github.com/hpcd-dev/hpcd/archive/refs/tags/{tag}.tar.gz"
+
+          sha256 = hashlib.sha256()
+          with urllib.request.urlopen(url) as resp:
+              while True:
+                  chunk = resp.read(1024 * 1024)
+                  if not chunk:
+                      break
+                  sha256.update(chunk)
+          digest = sha256.hexdigest()
+
+          text = re.sub(r'^(\s*url\s+\")[^\"]+\"', rf'\1{url}"', text, flags=re.M)
+          text = re.sub(r'^(\s*sha256\s+\")[^\"]+\"', rf'\1{digest}"', text, flags=re.M)
+          text = re.sub(r'\n\s*bottle do\n(?:.|\n)*?\n\s*end\n', '\n', text, count=1)
+
+          with open(path, "w", encoding="utf-8") as fh:
+              fh.write(text)
+
+          print(f"Updated Formula/hpc.rb to {new_version} (sha256 {digest})")
+          PY
+
       - name: Install Homebrew (Linux)
         run: |
           sudo apt-get update
@@ -227,6 +420,9 @@ jobs:
       - name: Commit formula updates (bottle stanza)
         run: |
           git add Formula/hpc.rb
+          if ls Formula/hpc@*.rb >/dev/null 2>&1; then
+            git add Formula/hpc@*.rb
+          fi
           if ! git diff --cached --quiet; then
             git commit -m "Add bottle for hpc ${{ steps.meta.outputs.version }}"
           fi

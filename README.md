@@ -8,6 +8,12 @@ brew tap hpcd-dev/hpcd
 brew install hpc
 ```
 
+Install a specific older series:
+```bash
+brew install hpc@0.1
+```
+Versioned formulae are keg-only; if you need them on PATH, use `brew link --force hpc@0.1`.
+
 Start the daemon with Homebrew services (macOS + Linux):
 ```bash
 brew services start hpc
