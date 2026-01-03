@@ -88,6 +88,12 @@ jobs:
                   )
                   if count != 1:
                       raise SystemExit("Could not insert keg_only for versioned formula")
+                  versioned_text = re.sub(
+                      r'\n\s*bottle do\n(?:.|\n)*?\n\s*end\n',
+                      '\n',
+                      versioned_text,
+                      count=1,
+                  )
                   with open(versioned_path, "w", encoding="utf-8") as fh:
                       fh.write(versioned_text)
                   print(f"Created {versioned_path}")
@@ -299,6 +305,12 @@ jobs:
                   )
                   if count != 1:
                       raise SystemExit("Could not insert keg_only for versioned formula")
+                  versioned_text = re.sub(
+                      r'\n\s*bottle do\n(?:.|\n)*?\n\s*end\n',
+                      '\n',
+                      versioned_text,
+                      count=1,
+                  )
                   with open(versioned_path, "w", encoding="utf-8") as fh:
                       fh.write(versioned_text)
                   print(f"Created {versioned_path}")
