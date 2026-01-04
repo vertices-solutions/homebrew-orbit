@@ -63,7 +63,7 @@ jobs:
               text = fh.read()
 
           tag = f"v{new_version}"
-          url = f"https://github.com/hpcd-dev/hpcd/archive/refs/tags/{tag}.tar.gz"
+          url = f"https://github.com/hpcd-dev/hpc/archive/refs/tags/{tag}.tar.gz"
 
           sha256 = hashlib.sha256()
           with urllib.request.urlopen(url) as resp:
