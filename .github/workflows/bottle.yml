@@ -74,8 +74,8 @@ jobs:
                   sha256.update(chunk)
           digest = sha256.hexdigest()
 
-          text = re.sub(r'^(\s*url\s+\")[^\"]+\"', rf'\1{url}"', text, flags=re.M)
-          text = re.sub(r'^(\s*sha256\s+\")[^\"]+\"', rf'\1{digest}"', text, flags=re.M)
+          text = re.sub(r'^(\s*url\s+\")[^\"]+\"', rf'\g<1>{url}"', text, flags=re.M)
+          text = re.sub(r'^(\s*sha256\s+\")[^\"]+\"', rf'\g<1>{digest}"', text, flags=re.M)
           text = re.sub(r'\n\s*bottle do\n(?:.|\n)*?\n\s*end\n', '\n', text, count=1)
 
           with open(path, "w", encoding="utf-8") as fh:
@@ -296,8 +296,8 @@ jobs:
                   sha256.update(chunk)
           digest = sha256.hexdigest()
 
-          text = re.sub(r'^(\s*url\s+\")[^\"]+\"', rf'\1{url}"', text, flags=re.M)
-          text = re.sub(r'^(\s*sha256\s+\")[^\"]+\"', rf'\1{digest}"', text, flags=re.M)
+          text = re.sub(r'^(\s*url\s+\")[^\"]+\"', rf'\g<1>{url}"', text, flags=re.M)
+          text = re.sub(r'^(\s*sha256\s+\")[^\"]+\"', rf'\g<1>{digest}"', text, flags=re.M)
           text = re.sub(r'\n\s*bottle do\n(?:.|\n)*?\n\s*end\n', '\n', text, count=1)
 
           with open(path, "w", encoding="utf-8") as fh:
