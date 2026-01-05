@@ -24,8 +24,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Bump formula to version input (optional)
-        if: ${{ inputs.version != '' }}
+      - name: Ensure versioned formula (optional bump)
         env:
           VERSION_INPUT: ${{ inputs.version }}
         run: |
@@ -36,10 +35,6 @@ jobs:
           import sys
           import urllib.request
 
-          version_input = os.environ.get("VERSION_INPUT", "").strip()
-          if not version_input:
-              sys.exit(0)
-
           def series_of(version):
               parts = version.split(".")
               if len(parts) < 2:
@@ -49,42 +44,62 @@ jobs:
           def class_name(series):
               return "HpcAT" + series.replace(".", "")
 
-          new_version = version_input.lstrip("v")
-          new_series = series_of(new_version)
+          def parse_version(formula_text):
+              patterns = (
+                  r'^\s*version\s+"([^"]+)"',
+                  r'^\s*url\s+"[^"]*/v?([^"/]+)\.tar\.gz"',
+              )
+              for pattern in patterns:
+                  match = re.search(pattern, formula_text, flags=re.M)
+                  if match:
+                      return match.group(1)
+              raise SystemExit("Could not determine version from Formula/hpc.rb")
 
+          version_input = os.environ.get("VERSION_INPUT", "").strip()
+
+          path = "Formula/hpc.rb"
+          with open(path, "r", encoding="utf-8") as fh:
+              text = fh.read()
+
+          if version_input:
+              new_version = version_input.lstrip("v")
+              tag = f"v{new_version}"
+              url = f"https://github.com/hpcd-dev/hpcd/archive/refs/tags/{tag}.tar.gz"
+
+              sha256 = hashlib.sha256()
+              with urllib.request.urlopen(url) as resp:
+                  while True:
+                      chunk = resp.read(1024 * 1024)
+                      if not chunk:
+                          break
+                      sha256.update(chunk)
+              digest = sha256.hexdigest()
+
+              text = re.sub(r'^(\s*url\s+\")[^\"]+\"', rf'\g<1>{url}"', text, flags=re.M)
+              text = re.sub(r'^(\s*sha256\s+\")[^\"]+\"', rf'\g<1>{digest}"', text, flags=re.M)
+              text = re.sub(r'\n\s*bottle do\n(?:.|\n)*?\n\s*end\n', '\n', text, count=1)
+
+              with open(path, "w", encoding="utf-8") as fh:
+                  fh.write(text)
+
+              print(f"Updated Formula/hpc.rb to {new_version} (sha256 {digest})")
+          else:
+              new_version = parse_version(text)
+
+          new_series = series_of(new_version)
           env_path = os.environ.get("GITHUB_ENV")
           if env_path:
               with open(env_path, "a", encoding="utf-8") as fh:
                   fh.write(f"VERSION={new_version}\n")
                   fh.write(f"SERIES={new_series}\n")
 
-          path = "Formula/hpc.rb"
-          with open(path, "r", encoding="utf-8") as fh:
-              text = fh.read()
-
-          tag = f"v{new_version}"
-          url = f"https://github.com/hpcd-dev/hpc/archive/refs/tags/{tag}.tar.gz"
-
-          sha256 = hashlib.sha256()
-          with urllib.request.urlopen(url) as resp:
-              while True:
-                  chunk = resp.read(1024 * 1024)
-                  if not chunk:
-                      break
-                  sha256.update(chunk)
-          digest = sha256.hexdigest()
-
-          text = re.sub(r'^(\s*url\s+\")[^\"]+\"', rf'\g<1>{url}"', text, flags=re.M)
-          text = re.sub(r'^(\s*sha256\s+\")[^\"]+\"', rf'\g<1>{digest}"', text, flags=re.M)
-          text = re.sub(r'\n\s*bottle do\n(?:.|\n)*?\n\s*end\n', '\n', text, count=1)
-
-          with open(path, "w", encoding="utf-8") as fh:
-              fh.write(text)
-
-          print(f"Updated Formula/hpc.rb to {new_version} (sha256 {digest})")
-
           versioned_path = f"Formula/hpc@{new_series}.rb"
-          versioned_text = text
+          versioned_text = re.sub(
+              r'\n\s*bottle do\n(?:.|\n)*?\n\s*end\n',
+              '\n',
+              text,
+              count=1,
+          )
           versioned_text, count = re.subn(
               r'^\s*class\s+\w+\s+<\s+Formula\s*$',
               f"class {class_name(new_series)} < Formula",
@@ -174,6 +189,7 @@ jobs:
               shutil.copyfile(src, dst)
           PY
             ruby -c "${dst}"
+            git -C "${tap_path}" add "${FORMULA_VERSIONED_PATH}"
           fi
 
       - name: Compute version + root_url
@@ -246,8 +262,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Bump formula to version input (optional)
-        if: ${{ inputs.version != '' }}
+      - name: Ensure versioned formula (optional bump)
         env:
           VERSION_INPUT: ${{ inputs.version }}
         run: |
@@ -258,10 +273,6 @@ jobs:
           import sys
           import urllib.request
 
-          version_input = os.environ.get("VERSION_INPUT", "").strip()
-          if not version_input:
-              sys.exit(0)
-
           def series_of(version):
               parts = version.split(".")
               if len(parts) < 2:
@@ -271,42 +282,62 @@ jobs:
           def class_name(series):
               return "HpcAT" + series.replace(".", "")
 
-          new_version = version_input.lstrip("v")
-          new_series = series_of(new_version)
+          def parse_version(formula_text):
+              patterns = (
+                  r'^\s*version\s+"([^"]+)"',
+                  r'^\s*url\s+"[^"]*/v?([^"/]+)\.tar\.gz"',
+              )
+              for pattern in patterns:
+                  match = re.search(pattern, formula_text, flags=re.M)
+                  if match:
+                      return match.group(1)
+              raise SystemExit("Could not determine version from Formula/hpc.rb")
 
+          version_input = os.environ.get("VERSION_INPUT", "").strip()
+
+          path = "Formula/hpc.rb"
+          with open(path, "r", encoding="utf-8") as fh:
+              text = fh.read()
+
+          if version_input:
+              new_version = version_input.lstrip("v")
+              tag = f"v{new_version}"
+              url = f"https://github.com/hpcd-dev/hpcd/archive/refs/tags/{tag}.tar.gz"
+
+              sha256 = hashlib.sha256()
+              with urllib.request.urlopen(url) as resp:
+                  while True:
+                      chunk = resp.read(1024 * 1024)
+                      if not chunk:
+                          break
+                      sha256.update(chunk)
+              digest = sha256.hexdigest()
+
+              text = re.sub(r'^(\s*url\s+\")[^\"]+\"', rf'\g<1>{url}"', text, flags=re.M)
+              text = re.sub(r'^(\s*sha256\s+\")[^\"]+\"', rf'\g<1>{digest}"', text, flags=re.M)
+              text = re.sub(r'\n\s*bottle do\n(?:.|\n)*?\n\s*end\n', '\n', text, count=1)
+
+              with open(path, "w", encoding="utf-8") as fh:
+                  fh.write(text)
+
+              print(f"Updated Formula/hpc.rb to {new_version} (sha256 {digest})")
+          else:
+              new_version = parse_version(text)
+
+          new_series = series_of(new_version)
           env_path = os.environ.get("GITHUB_ENV")
           if env_path:
               with open(env_path, "a", encoding="utf-8") as fh:
                   fh.write(f"VERSION={new_version}\n")
                   fh.write(f"SERIES={new_series}\n")
 
-          path = "Formula/hpc.rb"
-          with open(path, "r", encoding="utf-8") as fh:
-              text = fh.read()
-
-          tag = f"v{new_version}"
-          url = f"https://github.com/hpcd-dev/hpcd/archive/refs/tags/{tag}.tar.gz"
-
-          sha256 = hashlib.sha256()
-          with urllib.request.urlopen(url) as resp:
-              while True:
-                  chunk = resp.read(1024 * 1024)
-                  if not chunk:
-                      break
-                  sha256.update(chunk)
-          digest = sha256.hexdigest()
-
-          text = re.sub(r'^(\s*url\s+\")[^\"]+\"', rf'\g<1>{url}"', text, flags=re.M)
-          text = re.sub(r'^(\s*sha256\s+\")[^\"]+\"', rf'\g<1>{digest}"', text, flags=re.M)
-          text = re.sub(r'\n\s*bottle do\n(?:.|\n)*?\n\s*end\n', '\n', text, count=1)
-
-          with open(path, "w", encoding="utf-8") as fh:
-              fh.write(text)
-
-          print(f"Updated Formula/hpc.rb to {new_version} (sha256 {digest})")
-
           versioned_path = f"Formula/hpc@{new_series}.rb"
-          versioned_text = text
+          versioned_text = re.sub(
+              r'\n\s*bottle do\n(?:.|\n)*?\n\s*end\n',
+              '\n',
+              text,
+              count=1,
+          )
           versioned_text, count = re.subn(
               r'^\s*class\s+\w+\s+<\s+Formula\s*$',
               f"class {class_name(new_series)} < Formula",
@@ -385,6 +416,7 @@ jobs:
               shutil.copyfile(src, dst)
           PY
             ruby -c "${dst}"
+            git -C "${tap_path}" add "${FORMULA_VERSIONED_PATH}"
           fi
 
       - uses: actions/download-artifact@v4
