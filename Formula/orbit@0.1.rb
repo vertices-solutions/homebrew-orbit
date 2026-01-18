@@ -13,7 +13,7 @@ class OrbitAT01 < Formula
   depends_on "sqlite" if OS.linux?
 
   def install
-    system "cargo", "install", *std_cargo_args(path: "cli")
+    system "cargo", "install", *std_cargo_args(path: "orbit")
     system "cargo", "install", *std_cargo_args(path: "orbitd")
   end
 
