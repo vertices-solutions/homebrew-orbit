@@ -42,7 +42,7 @@ jobs:
               return f"{parts[0]}.{parts[1]}"
 
           def class_name(series):
-              return "HpcAT" + series.replace(".", "")
+              return "OrbitAT" + series.replace(".", "")
 
           def parse_version(formula_text):
               patterns = (
@@ -53,18 +53,18 @@ jobs:
                   match = re.search(pattern, formula_text, flags=re.M)
                   if match:
                       return match.group(1)
-              raise SystemExit("Could not determine version from Formula/hpc.rb")
+              raise SystemExit("Could not determine version from Formula/orbit.rb")
 
           version_input = os.environ.get("VERSION_INPUT", "").strip()
 
-          path = "Formula/hpc.rb"
+          path = "Formula/orbit.rb"
           with open(path, "r", encoding="utf-8") as fh:
               text = fh.read()
 
           if version_input:
               new_version = version_input.lstrip("v")
               tag = f"v{new_version}"
-              url = f"https://github.com/hpcd-dev/hpcd/archive/refs/tags/{tag}.tar.gz"
+              url = f"https://github.com/vertices-solutions/orbit/archive/refs/tags/{tag}.tar.gz"
 
               sha256 = hashlib.sha256()
               with urllib.request.urlopen(url) as resp:
@@ -82,7 +82,7 @@ jobs:
               with open(path, "w", encoding="utf-8") as fh:
                   fh.write(text)
 
-              print(f"Updated Formula/hpc.rb to {new_version} (sha256 {digest})")
+              print(f"Updated Formula/orbit.rb to {new_version} (sha256 {digest})")
           else:
               new_version = parse_version(text)
 
@@ -93,7 +93,7 @@ jobs:
                   fh.write(f"VERSION={new_version}\n")
                   fh.write(f"SERIES={new_series}\n")
 
-          versioned_path = f"Formula/hpc@{new_series}.rb"
+          versioned_path = f"Formula/orbit@{new_series}.rb"
           versioned_text = re.sub(
               r'\n\s*bottle do\n(?:.|\n)*?\n\s*end\n',
               '\n',
@@ -149,15 +149,15 @@ jobs:
           tap="${GITHUB_REPOSITORY_OWNER}/${tap_repo}"
           echo "TAP_REPO=${tap_repo}" >> "$GITHUB_ENV"
           echo "TAP=${tap}" >> "$GITHUB_ENV"
-          echo "FORMULA=${tap}/hpc" >> "$GITHUB_ENV"
+          echo "FORMULA=${tap}/orbit" >> "$GITHUB_ENV"
           if [ -n "${SERIES}" ]; then
-            echo "FORMULA_VERSIONED=${tap}/hpc@${SERIES}" >> "$GITHUB_ENV"
-            echo "FORMULA_VERSIONED_PATH=Formula/hpc@${SERIES}.rb" >> "$GITHUB_ENV"
+            echo "FORMULA_VERSIONED=${tap}/orbit@${SERIES}" >> "$GITHUB_ENV"
+            echo "FORMULA_VERSIONED_PATH=Formula/orbit@${SERIES}.rb" >> "$GITHUB_ENV"
           fi
 
       - name: Tap this repository
         run: |
-          ruby -c "${GITHUB_WORKSPACE}/Formula/hpc.rb"
+          ruby -c "${GITHUB_WORKSPACE}/Formula/orbit.rb"
           brew_repo="$(brew --repository)"
           tap_dir="${brew_repo}/Library/Taps/${GITHUB_REPOSITORY_OWNER}/homebrew-${TAP_REPO}"
           brew untap --force "${TAP}" 2>/dev/null || true
@@ -167,8 +167,8 @@ jobs:
           esac
           brew tap "${TAP}" "${GITHUB_WORKSPACE}"
           tap_path="$(brew --repo "${TAP}")"
-          src="${GITHUB_WORKSPACE}/Formula/hpc.rb"
-          dst="${tap_path}/Formula/hpc.rb"
+          src="${GITHUB_WORKSPACE}/Formula/orbit.rb"
+          dst="${tap_path}/Formula/orbit.rb"
           SRC="${src}" DST="${dst}" python3 - <<'PY'
           import os, shutil
           src = os.environ["SRC"]
@@ -197,7 +197,7 @@ jobs:
         run: |
           version="$(brew info --json=v2 "${FORMULA}" | python3 -c 'import json, sys; data=json.load(sys.stdin); print(data["formulae"][0]["versions"]["stable"])')"
           echo "version=$version" >> "$GITHUB_OUTPUT"
-          echo "root_url=https://github.com/${GITHUB_REPOSITORY}/releases/download/hpc-${version}" >> "$GITHUB_OUTPUT"
+          echo "root_url=https://github.com/${GITHUB_REPOSITORY}/releases/download/orbit-${version}" >> "$GITHUB_OUTPUT"
 
 
       - name: Build bottle
@@ -280,7 +280,7 @@ jobs:
               return f"{parts[0]}.{parts[1]}"
 
           def class_name(series):
-              return "HpcAT" + series.replace(".", "")
+              return "OrbitAT" + series.replace(".", "")
 
           def parse_version(formula_text):
               patterns = (
@@ -291,18 +291,18 @@ jobs:
                   match = re.search(pattern, formula_text, flags=re.M)
                   if match:
                       return match.group(1)
-              raise SystemExit("Could not determine version from Formula/hpc.rb")
+              raise SystemExit("Could not determine version from Formula/orbit.rb")
 
           version_input = os.environ.get("VERSION_INPUT", "").strip()
 
-          path = "Formula/hpc.rb"
+          path = "Formula/orbit.rb"
           with open(path, "r", encoding="utf-8") as fh:
               text = fh.read()
 
           if version_input:
               new_version = version_input.lstrip("v")
               tag = f"v{new_version}"
-              url = f"https://github.com/hpcd-dev/hpcd/archive/refs/tags/{tag}.tar.gz"
+              url = f"https://github.com/vertices-solutions/orbit/archive/refs/tags/{tag}.tar.gz"
 
               sha256 = hashlib.sha256()
               with urllib.request.urlopen(url) as resp:
@@ -320,7 +320,7 @@ jobs:
               with open(path, "w", encoding="utf-8") as fh:
                   fh.write(text)
 
-              print(f"Updated Formula/hpc.rb to {new_version} (sha256 {digest})")
+              print(f"Updated Formula/orbit.rb to {new_version} (sha256 {digest})")
           else:
               new_version = parse_version(text)
 
@@ -331,7 +331,7 @@ jobs:
                   fh.write(f"VERSION={new_version}\n")
                   fh.write(f"SERIES={new_series}\n")
 
-          versioned_path = f"Formula/hpc@{new_series}.rb"
+          versioned_path = f"Formula/orbit@{new_series}.rb"
           versioned_text = re.sub(
               r'\n\s*bottle do\n(?:.|\n)*?\n\s*end\n',
               '\n',
@@ -376,15 +376,15 @@ jobs:
           tap="${GITHUB_REPOSITORY_OWNER}/${tap_repo}"
           echo "TAP_REPO=${tap_repo}" >> "$GITHUB_ENV"
           echo "TAP=${tap}" >> "$GITHUB_ENV"
-          echo "FORMULA=${tap}/hpc" >> "$GITHUB_ENV"
+          echo "FORMULA=${tap}/orbit" >> "$GITHUB_ENV"
           if [ -n "${SERIES}" ]; then
-            echo "FORMULA_VERSIONED=${tap}/hpc@${SERIES}" >> "$GITHUB_ENV"
-            echo "FORMULA_VERSIONED_PATH=Formula/hpc@${SERIES}.rb" >> "$GITHUB_ENV"
+            echo "FORMULA_VERSIONED=${tap}/orbit@${SERIES}" >> "$GITHUB_ENV"
+            echo "FORMULA_VERSIONED_PATH=Formula/orbit@${SERIES}.rb" >> "$GITHUB_ENV"
           fi
 
       - name: Tap this repository
         run: |
-          ruby -c "${GITHUB_WORKSPACE}/Formula/hpc.rb"
+          ruby -c "${GITHUB_WORKSPACE}/Formula/orbit.rb"
           brew_repo="$(brew --repository)"
           tap_dir="${brew_repo}/Library/Taps/${GITHUB_REPOSITORY_OWNER}/homebrew-${TAP_REPO}"
           brew untap --force "${TAP}" 2>/dev/null || true
@@ -394,8 +394,8 @@ jobs:
           esac
           brew tap "${TAP}" "${GITHUB_WORKSPACE}"
           tap_path="$(brew --repo "${TAP}")"
-          src="${GITHUB_WORKSPACE}/Formula/hpc.rb"
-          dst="${tap_path}/Formula/hpc.rb"
+          src="${GITHUB_WORKSPACE}/Formula/orbit.rb"
+          dst="${tap_path}/Formula/orbit.rb"
           SRC="${src}" DST="${dst}" python3 - <<'PY'
           import os, shutil
           src = os.environ["SRC"]
@@ -430,7 +430,7 @@ jobs:
         run: |
           version="$(brew info --json=v2 "${FORMULA}" | python3 -c 'import json, sys; data=json.load(sys.stdin); print(data["formulae"][0]["versions"]["stable"])')"
           echo "version=$version" >> "$GITHUB_OUTPUT"
-          echo "root_url=https://github.com/${GITHUB_REPOSITORY}/releases/download/hpc-${version}" >> "$GITHUB_OUTPUT"
+          echo "root_url=https://github.com/${GITHUB_REPOSITORY}/releases/download/orbit-${version}" >> "$GITHUB_OUTPUT"
 
       - name: Configure git identity (for brew + commits)
         run: |
@@ -452,8 +452,8 @@ jobs:
 
           # Copy the formula from the tap checkout back into this repo workspace
           tap_path="$(brew --repo "${TAP}")"
-          src="${tap_path}/Formula/hpc.rb"
-          dst="${GITHUB_WORKSPACE}/Formula/hpc.rb"
+          src="${tap_path}/Formula/orbit.rb"
+          dst="${GITHUB_WORKSPACE}/Formula/orbit.rb"
           SRC="${src}" DST="${dst}" python3 - <<'PY'
           import os, shutil
           src = os.environ["SRC"]
@@ -477,19 +477,19 @@ jobs:
           fi
 
           # Hard fail if bottle stanza wasn't written
-          grep -n "^[[:space:]]*bottle do" "${GITHUB_WORKSPACE}/Formula/hpc.rb"
+          grep -n "^[[:space:]]*bottle do" "${GITHUB_WORKSPACE}/Formula/orbit.rb"
           if [ -n "${FORMULA_VERSIONED_PATH}" ] && [ -f "${GITHUB_WORKSPACE}/${FORMULA_VERSIONED_PATH}" ]; then
             grep -n "^[[:space:]]*bottle do" "${GITHUB_WORKSPACE}/${FORMULA_VERSIONED_PATH}"
           fi
 
       - name: Commit formula updates (bottle stanza)
         run: |
-          git add Formula/hpc.rb
-          if ls Formula/hpc@*.rb >/dev/null 2>&1; then
-            git add Formula/hpc@*.rb
+          git add Formula/orbit.rb
+          if ls Formula/orbit@*.rb >/dev/null 2>&1; then
+            git add Formula/orbit@*.rb
           fi
           if ! git diff --cached --quiet; then
-            git commit -m "Add bottle for hpc ${{ steps.meta.outputs.version }}"
+            git commit -m "Add bottle for orbit ${{ steps.meta.outputs.version }}"
           fi
           if [[ "${GITHUB_REF}" == refs/heads/* ]]; then
             branch="${GITHUB_REF#refs/heads/}"
@@ -499,6 +499,6 @@ jobs:
       - name: Create release + upload bottles
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: hpc-${{ steps.meta.outputs.version }}
-          name: "hpc ${{ steps.meta.outputs.version }} bottles"
+          tag_name: orbit-${{ steps.meta.outputs.version }}
+          name: "orbit ${{ steps.meta.outputs.version }} bottles"
           files: dist/**/*.bottle*.tar.gz
