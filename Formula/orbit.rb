@@ -22,6 +22,11 @@ class Orbit < Formula
   def install
     system "cargo", "install", *std_cargo_args(path: "orbit")
     system "cargo", "install", *std_cargo_args(path: "orbitd")
+    generate_completions_from_executable(
+      bin/"orbit",
+      "completions",
+      shells: [:bash, :zsh],
+    )
   end
 
   service do
