@@ -1,4 +1,4 @@
-class Orbit < Formula
+class OrbitAT017 < Formula
   desc "Local-first Slurm submissions over SSH"
   homepage "https://hpcd.dev"
   url "https://github.com/vertices-solutions/orbit/archive/refs/tags/v0.17.0.tar.gz"
@@ -7,11 +7,13 @@ class Orbit < Formula
 
   bottle do
     root_url "https://github.com/vertices-solutions/homebrew-orbit/releases/download/orbit-0.17.0"
-    sha256 cellar: :any_skip_relocation, arm64_tahoe:   "e1a07471c7d100ef35f35e4dfcab168e1f0fd2f9227dbd81788030fcfc021370"
-    sha256 cellar: :any_skip_relocation, arm64_sequoia: "e6592a0d2a71307056a3c6589a0523b2b7ea9cfe96cd663a2a30843e3ec107ef"
-    sha256 cellar: :any_skip_relocation, arm64_sonoma:  "bcacbdc913157aba8e4c5a7cc3d3bb07f8917d18314dcd103168dd8ca85a1da6"
-    sha256 cellar: :any_skip_relocation, x86_64_linux:  "11ed482052bc4b7dabc577b26a661b8a1d13354fd4ba4c68666caed5597bb8c3"
+    sha256 cellar: :any_skip_relocation, arm64_tahoe:   "f12d53695a0fd3a747dbd5ad559b363649b00acedfdb90661f2685d65c68cce3"
+    sha256 cellar: :any_skip_relocation, arm64_sequoia: "1d03ebdf19faf52eb0a772712140df0e0323bdcca55b5d4d55bdc47306bffba7"
+    sha256 cellar: :any_skip_relocation, arm64_sonoma:  "8680a8ffb074c2d46d10adabb440892c924bff7400f3444ba53a586d3203271e"
+    sha256 cellar: :any_skip_relocation, x86_64_linux:  "267559b8be508ddb4297db1bcdd14405d9bee557ff1b470d314090b6435f9920"
   end
+
+  keg_only :versioned_formula
 
   depends_on "pkg-config" => :build
   depends_on "rust" => :build
